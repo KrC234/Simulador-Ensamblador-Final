@@ -15,6 +15,6 @@ De modo que se han repartido en modulos para su trabajo individual de cada fase,
 Dónde por parte de los recursos se identifican los registros que conforman el ens, las pseudoinstrucciones, y las instrucciones correspondientes, clasificados por la cantidad de operandos que estás necesitan. 
 
 __Instrucciones:__
-Sin operandos: AAM, AAS, IRET, LAHF, STD, STI
-De un operando: INT, NOT, IDIV, MUL, JO, LOOP
-De dos operandos: RCL, SHL, XCHG, MOV, JNA, JNC, JNL, JBE
++ Sin operandos: AAM, AAS, IRET, LAHF, STD, STI
++ De un operando: INT, NOT, IDIV, MUL, JO, LOOP
++ De dos operandos: RCL, SHL, XCHG, MOV, JNA, JNC, JNL, JBE
