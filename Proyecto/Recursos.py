@@ -44,7 +44,7 @@ decodificaciones_0 = {
     'lahf':'10011111'
 }
 
-# La mayoría de instrucciones cuentan con una dirección de mod reg r/m
+# se consideran las formas del codigo base y de la direccion 
 decodificaciones_1 = {
     'int':{
         'operando': 'inmediato',
@@ -53,23 +53,17 @@ decodificaciones_1 = {
     'not':{
         'operando': 'reg/mem',
         'opcode' : '1111011w',
-        'mod' : None, 
-        'reg' : '010',
-        'r/m' : None
+        'direccion': 'mod010r/m'
     },
     'idiv':{
         'operando': 'reg/mem',
         'opcode' : '1111011w',
-        'mod' : None,
-        'reg' : '111',
-        'r/m' : None
+        'direccion': 'mod111r/m'
     },
     'mul':{
         'operando': 'reg/mem',
         'opcode' : '1111011w',
-        'mod' : None,
-        'reg' : '100',
-        'r/m' : None
+        'direccion': 'mod100r/m'
     }
 }
 
