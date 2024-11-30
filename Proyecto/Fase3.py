@@ -3,16 +3,17 @@ import Recursos as r
 
 # Elaboración de la Fase 3 del proyecto de ensambladores 
 
-class Decodificacion:
+class Codificacion:
 
     def __init__(self):
         pass
 
     '''
-    Decodificación de instrucciones 
+    Codificacion de instrucciones 
     dependiendo de la cantidad de operandos que estos tienen     
     '''
 
+    #* Se considera los variables del opcode y direccion para sustituir los valores 
     def reemplazar_valores(self,codigo,reg = None, mod = None, r_m =  None):
         if 'mod' in codigo and mod is not None:
             codigo = codigo.replace('mod',mod)
@@ -21,8 +22,10 @@ class Decodificacion:
         if 'r/m' in codigo and r_m is not None:
             codigo = codigo.replace('r/m',r_m)
         return codigo 
+    
+    # * Codificaciones: Realiza las codificaciones segun el número de operandos
 
-    def decodificar_sin_operandos(self,instruccion):
+    def codificar_sin_operandos(self,instruccion):
         if instruccion not in r.instrucciones_0:
             return 'Instruccion no reconocida'
         
@@ -31,7 +34,7 @@ class Decodificacion:
 
         return codificacion
     
-    def decodificar_un_operando(self, instruccion, operando):
+    def codificar_un_operando(self, instruccion, operando):
         if instruccion not in r.instrucciones_1:
             return 'Instrucción no reconocida'
     
@@ -57,5 +60,58 @@ class Decodificacion:
         binario = f'{opcode}{direccion}'
         codificacion = hex(int(binario,2))
         return codificacion
+
+
+# TODO: Es necesario validar los operandos para las codificaciones de dos operandos, dado los multiples casos que hay
+    def es_registro(self,operando):
+        if operando in r.registros_8: 
+            return True
+        elif operando in r.registros_16:
+            return True
+        else: 
+            return False 
+        
+    def codificar_dos_operandos(self,instruccion,operandoDestino,operandoFuente):
+        if instruccion not in r.instrucciones_2:
+            return 'Instrucción no reconocida'
+        
+        tipos = r.decodificaciones_2[instruccion]
+        tipo = None
+
+        d = None
+        mod = None
+        if self.es_registro(operandoDestino) and self.es_registro(operandoFuente):
+            tipo = 'Reg,Reg/Mem'
+
+        tipo_seleccionado =  tipos[tipo]
+
+        if operandoDestino in r.registros_8 or operandoFuente in r.registros_8:
+            w = '0'
+        elif operandoDestino in r.registros_16 or operandoFuente in r.registros_16:
+            w = '1'
+
+        reg = None
+        r_m = None
+        if tipo == 'Reg/Mem,Reg':
+            d = '0'
+            reg = r.registros_binarios[operandoFuente]
+            mod = '11'
+            r_m =  r.registros_binarios[operandoDestino]
+
+        elif tipo == 'Reg,Reg/Mem':
+            reg = r.registros_binarios[operandoDestino]
+            mod = '11'
+            r_m = r.registros_binarios[operandoFuente]
+
+        opcode = tipo_seleccionado['opcode'].replace('w',w)
+        direccion = tipo_seleccionado['direccion']
+        direccion = self.reemplazar_valores(direccion,mod = mod, reg = reg, r_m = r_m)
+
+        binario = f'{opcode}{direccion}'
+
+        codificacion = hex(int(binario,2))
+
+        return codificacion
+
 
 

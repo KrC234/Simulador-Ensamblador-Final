@@ -68,5 +68,18 @@ decodificaciones_1 = {
 }
 
 decodificaciones_2 = {
-
+    'mul':{
+        'Reg/Mem,Reg':{
+            'opcode':'1000100w',
+            'direccion':'modregr/m'
+        },
+        'Reg,Reg/Mem':{
+            'opcode':'1000101w',
+            'direccion':'modregr/m'
+        },
+        'Reg/Mem,Inm':{
+            'opcode':'1100011w',
+            'direccion':'mod000r/m'
+        }
+    }
 }
