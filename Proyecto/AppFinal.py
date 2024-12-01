@@ -4,6 +4,15 @@ from tkinter.ttk import Combobox
 from tkinter.ttk import Treeview
 import Fase1 as f1
 import Archivos 
+import Fase2 
+'''
+Proyecto final: Simulador de un ensamblador
+Equipo: 6
+Elaboro: 
+    Aalan Kalid Ruíz Colín 
+    Juan Luis Gamboa Lopez 
+    Daniel García Urbina 
+'''
 
 class ventana(tk.Frame):
     fa1 = f1.Separacion()

@@ -85,7 +85,7 @@ class Validacion:
                 operando1 in self.registros_16 or operando1 in self.registros_8):
             return True
         return False 
-        
+
     def validar_operando(self,operando):
         if self.validar_registro(operando):
             return True
@@ -160,7 +160,10 @@ class Validacion:
             else: 
                 resultados.append(self.analizar_linea(linea,segmento_activo))
         return resultados
-
+    def analisis_final(self,lineas):
+        resultados = self.analizar_lineas(lineas)
+        return resultados, self.lista_de_simbolos
+    
     def retornar_segmento(self,linea):
         if linea == '.stack segment':
             return f'{linea} - Segmento de Pila'
