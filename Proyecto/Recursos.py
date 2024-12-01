@@ -79,7 +79,9 @@ decodificaciones_1 = {
         'direccion': None 
     },
     'jnl':{
-
+        'operando': 'etiqueta',
+        'opcode': '0000111110001101',
+        'direccion': None
     },
     'jbe':{
         'operando': 'etiqueta',
@@ -99,7 +101,7 @@ decodificaciones_1 = {
 }
 
 decodificaciones_2 = {
-    'mul':{
+    'mov':{
         'Reg/Mem,Reg':{
             'opcode':'1000100w',
             'direccion':'modregr/m'
