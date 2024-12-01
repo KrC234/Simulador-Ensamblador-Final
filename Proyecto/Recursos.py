@@ -23,6 +23,17 @@ instrucciones_0 = {"aam", "aas", "iret", "lahf", "std", "sti"}
 instrucciones_1 = {"int", "not", "idiv", "mul", "jo", "loop", "jna", "jnc", "jnl", "jbe"}
 instrucciones_2 = {"rcl","shl","xchg", "mov"}
 
+# Patrones para el análisis semantico 
+stack_patterns = [r"^\s*dw\s+([0-9A-Fa-f]+h|\d+)\s+dup\(([-+]?\d+|‘[^’]*’)\)\s*$"]
+#! Verificar operandos entre comillas 
+data_patterns = [
+    r"(\w+)\s+db\s+['\"]([^'\"]+)['\"]",  # Captura nombre y valor entre comillas
+    r"(\w+)\s+db\s+([-+]?\d+|[0-9A-Fa-f]+h)",  # Captura nombre y valor numérico
+    r"(\w+)\s+db\s+([0-9A-Fa-f]+h|\d+)\s+dup\((['\"][^'\"]+['\"]|[0-9A-Fa-f]+h|\d+)\)",  # Con DUP
+    r"(\w+)\s+dw\s+([-+]?\d+|[0-9A-Fa-f]+h)",  # Captura nombre y valor numérico para DW
+    r"(\w+)\s+dw\s+([0-9A-Fa-f]+h|\d+)\s+dup\((['\"][^'\"]+['\"]|[0-9A-Fa-f]+h|\d+)\)",  # DW con DUP
+    r"(\w+)\s+equ\s+([-+]?\d+|[0-9A-Fa-f]+h)"
+]
 # Valores binarios de los registros para operandos reg o r/m 
 
 registros_binarios = {
