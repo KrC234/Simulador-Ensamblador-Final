@@ -3,11 +3,12 @@ from tkinter import filedialog, messagebox, END
 from tkinter.ttk import Combobox
 from tkinter.ttk import Treeview
 import Fase1 as f1
-import Archivos as arch 
+import Archivos 
 
 class ventana(tk.Frame):
     fa1 = f1.Separacion()
     def __init__(self, master=None):
+
         super().__init__(master, width=1150, height=600)
         self.master = master
         self.pack()
@@ -31,6 +32,9 @@ class ventana(tk.Frame):
         self.lineas_archivo = []  # Inicializar como lista vacía
         #AJUSTAR LAS COLUMNAS
         self.master.bind("<Configure>", self.ajustar_columnas)
+
+        self.arch = Archivos.Archivo()
+        self.lineas = []
         
     def create_widgets(self):
         #BARRA DE MENUS
@@ -318,7 +322,9 @@ class ventana(tk.Frame):
             
     def separar_tokens(self):
         # Procesa el archivo para obtener los tokens
-        elementos = self.fa1.procesar_archivo(self.filepath)
+        #elementos = self.fa1.procesar_archivo(self.filepath)
+        self.lineas = self.arch.procesar_archivo(self.filepath)
+        elementos = self.fa1.clasificar_tokens(self.lineas)
         
         # Limpiar las listas de símbolos y tipos previas
         self.token.clear()
