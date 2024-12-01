@@ -112,6 +112,35 @@ class Codificacion:
         codificacion = hex(int(binario,2))
 
         return codificacion
+    
+    # Manejo para la tabla de simbolos
+    # Instrucciones sin operandos 
+    def codificar_instruccion(self,instruccion, cp):
+        codificacion  = self.codificar_sin_operandos(instruccion)
+        simbolo = self.registrar_simbolo(tipo='Instruccion',simbolo = 'NA', valor = 'NA',direccion =cp,codificacion=codificacion,tamaño='NA')
+        cp = int(cp,16) + int(codificacion,16)
+        return cp, simbolo
+
+    def codificar_instruccion(self,instruccion,operando):
+        codificacion = self.codificar_un_operando(instruccion,operando)
+        simbolo = self.registrar_simbolo(tipo='Instruccion',simbolo = 'NA', valor = 'NA',direccion =cp,codificacion=codificacion,tamaño='NA')
+        cp = int(cp,16) + int(codificacion,16)
+        return cp, simbolo
+
+    def codificar_instruccion(self,instruccion,operandoDestino,operandoFuente):
+        codificacion = self.codificar_dos_operandos(instruccion,operandoFuente,operandoDestino)
+        simbolo = self.registrar_simbolo(tipo='Instruccion',simbolo = 'NA', valor = 'NA',direccion =cp,codificacion=codificacion,tamaño='NA')
+        cp = int(cp,16) + int(codificacion,16)
+        return cp, simbolo
 
 
-
+    def registrar_simbolo(self,tipo, simbolo=None,valor=None,direccion=None,codificacion=None,tamaño=None):
+        simbolo = {
+            'nombre' : simbolo, 
+            'tipo' : tipo,
+            'valor': valor,
+            'codificacion': codificacion,
+            'tamaño': tamaño,
+            'direccion':direccion
+        }
+        return simbolo
