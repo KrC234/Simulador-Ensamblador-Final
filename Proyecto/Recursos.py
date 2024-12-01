@@ -1,6 +1,9 @@
 '''
-Definición de palabras reservadas 
-Definición de diccionario de datos 
+Diccionario de datos:
+Definicion de registros 
+Definicion de instrucciones 
+Palabras reservadas
+codificacion de instrucciones: registros, direcciones, codigo 
 '''
 # Pseudoinstrucciones 
 pseudoinstrucciones = {"dw","db","equ","end","ends","endp",".code",".stack",".data"}
@@ -17,8 +20,8 @@ registros_base = {"bp","sp", "si"}
 # Instrucciones segun el número de operandos 
 
 instrucciones_0 = {"aam", "aas", "iret", "lahf", "std", "sti"}
-instrucciones_1 = {"int", "not", "idiv", "mul", "jo", "loop"}
-instrucciones_2 = {"rcl","shl","xchg", "mov", "jna", "jnc", "jnl", "jbe"}
+instrucciones_1 = {"int", "not", "idiv", "mul", "jo", "loop", "jna", "jnc", "jnl", "jbe"}
+instrucciones_2 = {"rcl","shl","xchg", "mov"}
 
 # Valores binarios de los registros para operandos reg o r/m 
 
@@ -64,6 +67,34 @@ decodificaciones_1 = {
         'operando': 'reg/mem',
         'opcode' : '1111011w',
         'direccion': 'mod100r/m'
+    },
+    'jna':{
+        'operando': 'etiqueta',
+        'opcode': '0000111110000110',
+        'direccion':None
+    },
+    'jnc':{
+        'operando': 'etiqueta',
+        'opcode': '0000111110000010',
+        'direccion': None 
+    },
+    'jnl':{
+
+    },
+    'jbe':{
+        'operando': 'etiqueta',
+        'opcode': '0000111110000110',
+        'direccion':None
+    },
+    'jo':{
+        'operando': 'etiqueta',
+        'opcode': '0000111110000000',
+        'direccion': None
+    },
+    'loop':{
+        'operando': 'etiqueta',
+        'opcode': '11100010',
+        'direccion' : None 
     }
 }
 
@@ -80,6 +111,28 @@ decodificaciones_2 = {
         'Reg/Mem,Inm':{
             'opcode':'1100011w',
             'direccion':'mod000r/m'
+        }
+    },
+    'rcl':{
+        'Reg/Mem,Inm.byte':{
+            'opcode': '1100000w',
+            'direccion':'modTTTr/m'
+        }
+    },
+    'xchg':{
+        'Reg,Reg/Mem, CL':{
+            'opcode': '1000011w',
+            'direccion': 'modregr/m'
+        },
+        'Acum,Reg':{
+            'opcode': '10010reg',
+            'direccion': None
+        }
+    },
+    'shl':{
+        'Reg/Mem,1':{
+            'opcode':'1101000w',
+            'direccion': 'modTTTr/m'
         }
     }
 }
