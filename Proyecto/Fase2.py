@@ -7,8 +7,6 @@ class Validacion:
         self.lista_de_simbolos = []
         self.variables = []
         self.etiquetas = []
-    # !Voy a omitir de momento el tratamiento de segmentos para tratarlos de mejor manera
-
 
     # Tratamiento semantico 
 
@@ -31,7 +29,11 @@ class Validacion:
     
     #* Registro de variables y etiquetas
     def registrar_variable(self,variable,valor):
-        pass
+        variable = {
+            'variable': variable, 
+            'valor': valor 
+        }
+        self.variables.append(variable)
 
     def registrar_etiqueta(self,etiqueta):
         self.etiquetas.append(etiqueta)
@@ -77,16 +79,20 @@ class Validacion:
             return True
         elif operando1 in r.registros_base and operando2 in r.registros_base:
             return True
-        
-        if (re.match(r"^\d+$", operando2) or re.match(r"^[0-9A-Fa-f]+h$", operando2)) and (
+        elif operando1 in [var['variable'] for var in self.variables] and operando2 in [var['variable'] for var in self.variables]:
+            return True
+        elif(re.match(r"^\d+$", operando2) or re.match(r"^[0-9A-Fa-f]+h$", operando2)) and (
                 operando1 in self.registros_16 or operando1 in self.registros_8):
             return True
+        return False 
         
     def validar_operando(self,operando):
         if self.validar_registro(operando):
             return True
-        elif operando in self.etiquetas:
+        elif operando in [etiqueta for etiqueta in self.etiquetas]:
             return True
+        elif operando in [variable['variable'] for variable in self.variables]:
+            return True 
         return False 
 
     def validar_linea(self,linea):
@@ -111,9 +117,9 @@ class Validacion:
         if match_uno:
             instruccion, operando =  match_uno.groups()
             if not self.validar_instruccion(instruccion,r.instrucciones_1):
-                return f'{instruccion} no es de un operando'
+                return f'Error: {instruccion} no es de un operando'
             if not self.validar_operando(operando):
-                return f'{operando} no es valido'
+                return f'Error: {operando} no es valido'
             return 'Correcta'
         
         # instrucciones sin operando 
@@ -149,13 +155,11 @@ class Validacion:
                 segmento_activo = True
                 resultados.append(self.retornar_segmento(linea))
             elif linea == 'ends':
+                resultados.append('{linea} - Fin de segmento')
                 segmento_activo = False 
             else: 
-                resultado = self.analizar_linea(linea,segmento_activo)
-        resultados.append(resultado)
-
-    
-
+                resultados.append(self.analizar_linea(linea,segmento_activo))
+        return resultados
 
     def retornar_segmento(self,linea):
         if linea == '.stack segment':
