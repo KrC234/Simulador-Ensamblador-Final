@@ -248,16 +248,17 @@ class ventana(tk.Frame):
         self.pagDer2.place(x=209, y=460, width=64, height=64)
         
         # Crear el Treeview para la tabla
-        self.tabla = Treeview(self.frame2, columns=("Columna1", "Columna2", "Columna3", "Columna4", "Columna5"), show="headings")
+        self.tabla = Treeview(self.frame2, columns=("Columna1", "Columna2", "Columna3", "Columna4", "Columna5","Columna6"), show="headings")
         self.tabla.pack(fill="both", expand=True)
         self.tabla.place(x=480, y=230, width=645, height=230)
         
         # Configurar encabezados
         self.tabla.heading("Columna1", text="Nombre")
         self.tabla.heading("Columna2", text="Tipo")
-        self.tabla.heading("Columna3", text="Valor")
-        self.tabla.heading("Columna4", text="Tamaño(Bytes)")
-        self.tabla.heading("Columna5", text="Direccion")
+        self.tabla.heading("Columna3", text="Valor"),
+        self.tabla.heading("Columna4",text="Codificacion")
+        self.tabla.heading("Columna5", text="Tamaño(Bytes)")
+        self.tabla.heading("Columna6", text="Direccion")
         
         #PAGINACION IZQUIERDA Y DERECHA DE TIPO Y SIMBOLO
         self.pagIzqS2 = tk.Button(self.frame2, image=self.imgPagI, command=self.paginar_iFase2)
@@ -436,6 +437,7 @@ class ventana(tk.Frame):
                 simbolo["nombre"],
                 simbolo["tipo"],
                 simbolo["valor"],
+                simbolo["codificacion"],
                 simbolo["tamaño"],
                 simbolo["direccion"]
             ))

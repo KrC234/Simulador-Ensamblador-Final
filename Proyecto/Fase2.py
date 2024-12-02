@@ -1,5 +1,6 @@
 import re
 import Recursos as r
+import Fase3
 class Validacion:
 
     def __init__(self):
@@ -7,6 +8,7 @@ class Validacion:
         self.lista_de_simbolos = []
         self.variables = []
         self.etiquetas = []
+        self.f3 = Fase3.Codificacion(self.variables,self.etiquetas)
 
     # Tratamiento semantico 
 
@@ -24,6 +26,7 @@ class Validacion:
                 valor = match.group(2)
                 tamaño =  len(valor)
                 self.registrar_simbolo(nombre,tipo='Variable',valor=valor,direccion=self.pc,codificacion='NA',tamaño = tamaño)
+                self.pc = hex(int(self.pc,16) + tamaño)
                 return True
         return False 
     
@@ -96,12 +99,15 @@ class Validacion:
         return False 
 
     def validar_linea(self,linea):
-        if ':' in linea:
-            etiqueta = linea.split(':')[0].strip
+        if ":" in linea:
+            etiqueta = linea.split(':')[0].strip()
+            self.registrar_simbolo(simbolo = etiqueta,tipo = 'etiqueta',direccion = self.pc)
             self.registrar_etiqueta(etiqueta)
+            return 'Correcto'
 
         # instrucciones de dos operandos 
         match_dos = re.match(r"^\s*(\w+)\s+(\w+),\s*(\w+)$", linea.strip()) 
+        codificacion_dos = None
         if match_dos:
             instruccion, operandoDestino, operandoFuente = match_dos.groups()
             if not self.validar_instruccion(instruccion, r.instrucciones_2):
@@ -109,9 +115,10 @@ class Validacion:
             
             if not self.validar_operandos(operandoDestino,operandoFuente):
                 return f'Error: {operandoDestino} y {operandoFuente} no son compatibles o validos'
-            
+            self.pc, codificacion_dos = self.f3.codificar_instruccion(instruccion,operandoDestino,operandoFuente,self.pc)
+            self.lista_de_simbolos.append(codificacion_dos)
             return 'Correcta'
-        
+                
         # instrucciones de un operando 
         match_uno = re.match(r"^\s*(\w+)\s+(\w+)$", linea.strip())
         if match_uno:
@@ -155,7 +162,7 @@ class Validacion:
                 segmento_activo = True
                 resultados.append(self.retornar_segmento(linea))
             elif linea == 'ends':
-                resultados.append('{linea} - Fin de segmento')
+                resultados.append('Fin de segmento')
                 segmento_activo = False 
             else: 
                 resultados.append(self.analizar_linea(linea,segmento_activo))
@@ -166,8 +173,8 @@ class Validacion:
     
     def retornar_segmento(self,linea):
         if linea == '.stack segment':
-            return f'{linea} - Segmento de Pila'
+            return f'Segmento de Pila'
         elif linea == '.data segment':
-            return f'{linea} - Segmento de Datos'
+            return f'Segmento de Datos'
         elif linea == '.code segment':
-            return f'{linea} - Segmento de Codigo'
+            return f'Segmento de Codigo'
