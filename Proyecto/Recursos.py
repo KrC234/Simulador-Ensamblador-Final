@@ -62,7 +62,8 @@ decodificaciones_0 = {
 decodificaciones_1 = {
     'int':{
         'operando': 'inmediato',
-        'opcode' : '1100101',
+        'opcode' : '11001101',
+        'direccion': None
     },
     'not':{
         'operando': 'reg/mem',

@@ -72,8 +72,15 @@ class Validacion:
             return True
         if operando in r.registros_base:
             return True
-        return False 
-        
+        return False
+
+    def es_inmediato(self,operando):
+        if re.match(r'^[0-9A-Fa-f]+h$',operando):
+            return True
+        elif re.match(r'^[0-9]+d$', operando):  # Decimal
+            return True
+        return False
+
     def validar_operandos(self,operando1,operando2):
 
         if operando1 in r.registros_8 and operando2 in r.registros_8:
@@ -84,9 +91,14 @@ class Validacion:
             return True
         elif operando1 in [var['variable'] for var in self.variables] and operando2 in [var['variable'] for var in self.variables]:
             return True
-        elif(re.match(r"^\d+$", operando2) or re.match(r"^[0-9A-Fa-f]+h$", operando2)) and (
-                operando1 in r.registros_16 or operando1 in r.registros_8):
-            return True
+        elif operando1 in r.registros_8 and self.es_inmediato(operando2):
+            valor_inm = ''
+            if re.match(r'^[0-9A-Fa-f]+h$', operando2):
+                valor_inm = bin(int(operando2[:-1],16))[2:]
+            elif re.match(r'^[0-9]+d$', operando2):
+                valor_inm = bin(int(operando2[:-1]))
+            if len(valor_inm) <= 8:
+                return True
         return False 
 
     def validar_operando(self,operando):
@@ -95,7 +107,9 @@ class Validacion:
         elif operando in [etiqueta for etiqueta in self.etiquetas]:
             return True
         elif operando in [variable['variable'] for variable in self.variables]:
-            return True 
+            return True
+        elif self.es_inmediato(operando):
+            return True
         return False 
 
     def validar_linea(self,linea):
@@ -115,7 +129,8 @@ class Validacion:
             
             if not self.validar_operandos(operandoDestino,operandoFuente):
                 return f'Error: {operandoDestino} y {operandoFuente} no son compatibles o validos'
-            self.pc, codificacion_dos = self.f3.codificar_instruccion(instruccion,operandoDestino,operandoFuente,self.pc)
+
+            self.pc, codificacion_dos = self.f3.codificar_instruccion_2(instruccion,operandoDestino,operandoFuente,self.pc)
             self.lista_de_simbolos.append(codificacion_dos)
             return 'Correcta'
                 
@@ -123,20 +138,38 @@ class Validacion:
         match_uno = re.match(r"^\s*(\w+)\s+(\w+)$", linea.strip())
         if match_uno:
             instruccion, operando =  match_uno.groups()
+
             if not self.validar_instruccion(instruccion,r.instrucciones_1):
                 return f'Error: {instruccion} no es de un operando'
             if not self.validar_operando(operando):
                 return f'Error: {operando} no es valido'
+            # TODO: Caso especial dado que la instruccion Int no acepta inmediatos mayores a 8 bits
+            valor_inm = None
+            if self.es_inmediato(operando):
+                if re.match(r'^[0-9A-Fa-f]+h$', operando):
+                    valor_inm = bin(int(operando[:-1], 16))[2:]
+                elif re.match(r'^[0-9]+d$', operando):
+                    valor_inm = bin(int(operando[:-1]))
+                if instruccion.lower() == 'int':
+                    if len(valor_inm) > 8:
+                        return f'Error: el operando {operando} excede los 8 bits permitidos para la instrucción INT'
+                    else:
+                        self.pc, codificacion_1 = self.f3.codificar_instruccion_1(instruccion, operando, self.pc)
+                        self.lista_de_simbolos.append(codificacion_1)
+                        return 'Correcta'
+            self.pc, codificacion_1 = self.f3.codificar_instruccion_1(instruccion,operando,self.pc)
+            self.lista_de_simbolos.append(codificacion_1)
             return 'Correcta'
         
         # instrucciones sin operando 
         if re.match(r"^\s*(\w+)\s*$", linea.strip()):
             instruccion = linea.strip()
             if self.validar_instruccion(instruccion,r.instrucciones_0):
+                self.pc, codificacion_0 = self.f3.codificar_instruccion_0(instruccion, self.pc)
+                self.lista_de_simbolos.append(codificacion_0)
                 return 'Correcta'
             else: 
                 return f'Error: {instruccion} no es una instruccion valida'
-            
         return 'Error de declaracion'
 
     def analizar_linea(self,linea,segmento_activo):

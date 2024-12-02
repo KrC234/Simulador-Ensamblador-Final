@@ -16,13 +16,17 @@ class Codificacion:
     '''
 
     #* Se considera los variables del opcode y direccion para sustituir los valores 
-    def reemplazar_valores(self,codigo,reg = None, mod = None, r_m =  None):
+    def reemplazar_valores(self,codigo,reg = None, mod = None, r_m =  None, w = None, d = None):
         if 'mod' in codigo and mod is not None:
             codigo = codigo.replace('mod',mod)
         if 'reg' in codigo and reg is not None:
             codigo = codigo.replace('reg',reg)
         if 'r/m' in codigo and r_m is not None:
             codigo = codigo.replace('r/m',r_m)
+        if 'w' in codigo and w is not None:
+            codigo = codigo.replace('w',w)
+        if 'd' in codigo and d is not None:
+            codigo = codigo.replace('d', d)
         return codigo 
     
     # * Codificaciones: Realiza las codificaciones segun el número de operandos
@@ -42,27 +46,47 @@ class Codificacion:
     
         tipo = None 
         w = None 
-
-        if operando in r.registros_8:
+        mod =  None
+        r_m = None
+        if self.es_registro(operando) and operando in r.registros_8:
             tipo = 'reg/mem'
+            mod = '11'
             w = '0'
-        elif operando in r.registros_16:
+            r_m = r.registros_binarios[operando]
+        elif self.es_registro(operando) and operando in r.registros_16:
             tipo = 'reg/mem'
+            mod = '11'
             w = '1'
+            r_m = r.registros_binarios[operando]
+        elif self.es_variable(operando):
+            tipo =  'reg/mem'
+            w = ''
+        elif self.es_etiqueta(operando):
+            tipo = 'etiqueta'
+        elif self.es_inmediato(operando):
+            tipo = 'inmediato'
+        else:
+            tipo = 'Operando no valido'
         
         instruccion_data = r.decodificaciones_1[instruccion]
         if instruccion_data['operando'] != tipo:
             return 'Operando no valido'
         
-        opcode = instruccion_data['opcode'].replace('w',w)
+        opcode = instruccion_data['opcode']
         direccion = instruccion_data['direccion']
-        mod = '11'
-        r_m = r.registros_binarios[operando]
-        direccion = self.reemplazar_valores(direccion, mod=mod,r_m=r_m)
+        if direccion is not None:
+            direccion = self.reemplazar_valores(direccion, mod=mod,r_m=r_m)
+        elif direccion is None and tipo == 'inmediato':
+            direccion = self.codificar_inmediato(operando).zfill(8)
+        else:
+            direccion = ''
+        opcode = self.reemplazar_valores(opcode,w=w)
+        print(f'{instruccion} {operando}')
+        print(opcode)
+        print(direccion)
         binario = f'{opcode}{direccion}'
         codificacion = hex(int(binario,2))
         return codificacion
-
 
 # TODO: Es necesario validar los operandos para las codificaciones de dos operandos, dado los multiples casos que hay
     def es_registro(self,operando):
@@ -81,8 +105,26 @@ class Codificacion:
     def es_etiqueta(self,operando):
         if operando in self.etiquetas:
             return True
-        return False 
-        
+        return False
+
+    def es_inmediato(self,operando):
+        if re.match(r'^[0-9A-Fa-f]+h$',operando):
+            return True
+        elif re.match(r'^[0-9]+d$', operando):
+            return True
+        return False
+    def codificar_inmediato(self,operando):
+        valor_inm = ''
+        if re.match(r'^[0-9A-Fa-f]+h$', operando):
+            valor_inm = bin(int(operando[:-1], 16))[2:]
+        elif re.match(r'^[0-9]+d$', operando):
+            valor_inm = bin(int(operando[:-1]))[2:]
+        return valor_inm
+
+    def es_memoria(self,operando):
+        pass
+
+
     def codificar_dos_operandos(self,instruccion,operandoDestino,operandoFuente):
         if instruccion not in r.instrucciones_2:
             return 'Instrucción no reconocida'
@@ -118,21 +160,22 @@ class Codificacion:
             mod = '11'
             r_m =  r.registros_binarios[operandoDestino]
 
-        elif tipo == 'Reg,Reg/Mem':
+        elif tipo == 'Reg,Reg/Mem' and self.es_registro(operandoFuente):
             d = '1'
             reg = r.registros_binarios[operandoDestino]
             mod = '11'
             r_m = r.registros_binarios[operandoFuente]
-
-        print(f'w:{w} reg: {reg} mod:{mod} r/m:{r_m}')
+        elif tipo == 'Reg,Reg/Mem' and self.es_variable(operandoFuente):
+            d = ''
+            reg = r.registros_binarios[operandoDestino]
+            mod = '11'
+            r_m = ''
 
         opcode = tipo_seleccionado['opcode'].replace('w',w)
         direccion = tipo_seleccionado['direccion']
-        print(f'Direccion{direccion}, Codigo{opcode}')
         direccion = self.reemplazar_valores(direccion,mod = mod, reg = reg, r_m = r_m)
 
         binario = f'{opcode}{direccion}'
-        print('Binario:',binario)
 
         codificacion = hex(int(binario,2))
 
@@ -140,24 +183,29 @@ class Codificacion:
     
     # Manejo para la tabla de simbolos
     # Instrucciones sin operandos 
-    def codificar_instruccion(self,instruccion, pc):
+    def codificar_instruccion_0(self,instruccion, pc):
         codificacion  = self.codificar_sin_operandos(instruccion)
         simbolo = self.registrar_simbolo(tipo='Instruccion',simbolo = 'NA', valor = 'NA',direccion =pc,codificacion=codificacion,tamaño='NA')
         pc = int(pc,16) + int(codificacion,16)
         return pc, simbolo
 
-    def codificar_instruccion(self,instruccion,operando,pc):
+    # Instrucciones de un operando
+    def codificar_instruccion_1(self,instruccion,operando,pc):
         codificacion = self.codificar_un_operando(instruccion,operando)
+        nombre = f'{instruccion} {operando}'
         if codificacion == 'Tipo desconocido':
-            simbolo = self.registrar_simbolo(tipo='Instruccion',simbolo = 'NA', valor = 'NA',direccion =pc,codificacion=codificacion,tamaño='NA')
+            simbolo = self.registrar_simbolo(tipo='Instruccion',simbolo = nombre, valor = 'NA',direccion =pc,
+                                             codificacion=codificacion,tamaño='NA')
+        elif codificacion == 'Operando no valido':
+            simbolo = self.registrar_simbolo(tipo='Instruccion', simbolo=nombre, valor='NA', direccion=pc,
+                                             codificacion=codificacion, tamaño='NA')
         else:
-            simbolo = self.registrar_simbolo(tipo='Instruccion',simbolo = 'NA', valor = 'NA',direccion =pc,codificacion=codificacion,tamaño='NA')
+            simbolo = self.registrar_simbolo(tipo='Instruccion',simbolo = nombre, valor = 'NA',direccion =pc,
+                                             codificacion=codificacion,tamaño='NA')
             pc = hex(int(pc,16) + int(codificacion,16))
         return pc, simbolo
 
-    def codificar_instruccion(self,instruccion,operandoDestino,operandoFuente,pc):
-        print('Operando Fuente:',operandoFuente)
-        print('Operando Destino:',operandoDestino)
+    def codificar_instruccion_2(self,instruccion,operandoDestino,operandoFuente,pc):
         codificacion = self.codificar_dos_operandos(instruccion,operandoDestino,operandoFuente)
         nombre = f'{instruccion} {operandoDestino},{operandoFuente}'
         if codificacion == 'Tipo desconocido':

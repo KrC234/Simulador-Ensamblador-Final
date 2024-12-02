@@ -5,7 +5,14 @@ from tkinter.ttk import Treeview
 import Fase1 as f1
 import Archivos 
 import Fase2 as f2
-
+'''
+    Proyecto Final: Simulador de un ensmablador 
+    Equipo 6: 
+    Colaboradores: 
+        Aalan Kalid Ruíz Colín 
+        Juan Luis Gamboa Lopez
+        Ivan Daniel García Urbina 
+'''
 class ventana(tk.Frame):
     fa1 = f1.Separacion()
     fa2 = f2.Validacion()
