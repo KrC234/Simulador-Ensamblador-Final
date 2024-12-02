@@ -9,25 +9,25 @@ class Separacion:
 
     def generar_tokens(self,contenido):
         lineas = contenido
-        tokens = []
-
+        tokens_globales = []
         for linea in lineas:
-            if linea.lower().startswith(('.code segment','.data segment','.stack segment')):
-                tokens.append(linea.strip())
+            if any(linea.strip().lower().startswith(keyword) for keyword in ['.stack segment','.code segment','.data segment']):
+                tokens_globales.append(linea.strip())
+                continue
 
-            # !Falta corregir la parte para mantener los espacios entre comillas 
-            coincidencias = re.findall(r'(["\']).*?\1', linea)
-            for coincidencia in coincidencias:
-                tokens.append(coincidencia)
-                linea = linea.replace(coincidencia,'')
+            linea = re.split(r';', linea, maxsplit=1)[0]
+            partes_preservadas = []
+            def reemplazo(m):
+                partes_preservadas.append(m.group(0))
+                return f'__PLACEHOLDER_{len(partes_preservadas) - 1}__'
 
-            # Ignora comentarios dentro de la linea 
-            linea = linea.split(';')[0]
-            if linea:
-                # Separar la línea por comas y espacios (de forma simultánea)
-                sub_tokens = [sub_token.strip() for sub_token in re.split(r'[,\s]+', linea)]
-                tokens.extend(sub_tokens) 
-        return [token for token in tokens if token]
+            linea_sin_cadenas = re.sub(r'(["\']).*?\1', reemplazo, linea)
+            tokens = [token.strip() for token in re.split(r'[,\s]+', linea_sin_cadenas) if token]
+            for i, cadena in enumerate(partes_preservadas):
+                tokens = [token.replace(f'__PLACEHOLDER_{i}__', cadena) for token in tokens]
+
+            tokens_globales.extend(tokens)
+        return [token for token in tokens_globales if token]
     
 
     # Identifica el tipo de elemento, en caso de que se encuentre en los recursos establecidos
@@ -47,6 +47,12 @@ class Separacion:
             return "Constante Númerica Decimal"
         elif re.match(r'^[0-9A-Fa-f]+h$',token):
             return "Constante Númerica Hexadecimal"
+        elif re.match(r"^'[^']+'$",token):
+            return "Carácter"
+        elif re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', token):
+            return "Simbolo"
+        elif ":" in token:
+            return "Etiqueta"
         else:
             return "Elemento desconocido"
         

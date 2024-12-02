@@ -133,7 +133,7 @@ decodificaciones_2 = {
         }
     },
     'xchg':{
-        'Reg,Reg/Mem, CL':{
+        'Reg,Reg/Mem':{
             'opcode': '1000011w',
             'direccion': 'modregr/m'
         },

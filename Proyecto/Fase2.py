@@ -160,6 +160,7 @@ class Validacion:
 
             if linea in r.segmentos:
                 segmento_activo = True
+                self.pc = '0x100'
                 resultados.append(self.retornar_segmento(linea))
             elif linea == 'ends':
                 resultados.append('Fin de segmento')

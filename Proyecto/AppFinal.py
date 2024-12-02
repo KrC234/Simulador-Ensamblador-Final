@@ -6,7 +6,6 @@ import Fase1 as f1
 import Archivos 
 import Fase2 as f2
 
-
 class ventana(tk.Frame):
     fa1 = f1.Separacion()
     fa2 = f2.Validacion()
@@ -115,7 +114,7 @@ class ventana(tk.Frame):
         #TODOS LOS ELEMETOS DE LA FASE 1
         
         #TEXT de archivos
-        self.lblArchivo = tk.Label(self.frame1, text="ARCHIVO", font=("Times New Roman",16), bg=self.frame1.cget("bg"), fg="white")
+        self.lblArchivo = tk.Label(self.frame1, text="ARCHIVO", font=("Times New Roman",10), bg=self.frame1.cget("bg"), fg="white")
         self.lblArchivo.place(x=105, y=30, width=150, height=30)
         
         self.txtArchivo = tk.Text(self.frame1, wrap=tk.WORD, font=("Times New Roman", 10), state="disabled")
@@ -154,7 +153,7 @@ class ventana(tk.Frame):
         #ELEMENTO-SIMBOLO
         self.txtToken = tk.Text(self.frame1, state="disabled")
         self.txtToken.config(
-            font=("Times New Roman",15),
+            font=("Times New Roman",10),
             bg="#EFDFAC"
         )
         self.txtToken.place(x=550, y=70, width=200, height=400)
@@ -162,7 +161,7 @@ class ventana(tk.Frame):
         #ELEMENTO-TIPO
         self.txtTipo = tk.Text(self.frame1, state="disabled")
         self.txtTipo.config(
-            font=("Times New Roman",15),
+            font=("Times New Roman",10),
             bg="#EFDFAC"
         )
         self.txtTipo.place(x=800, y=70, width=300, height=400)
