@@ -4,18 +4,12 @@ from tkinter.ttk import Combobox
 from tkinter.ttk import Treeview
 import Fase1 as f1
 import Archivos 
-import Fase2 
-'''
-Proyecto final: Simulador de un ensamblador
-Equipo: 6
-Elaboro: 
-    Aalan Kalid Ruíz Colín 
-    Juan Luis Gamboa Lopez 
-    Daniel García Urbina 
-'''
+import Fase2 as f2
+
 
 class ventana(tk.Frame):
     fa1 = f1.Separacion()
+    fa2 = f2.Validacion()
     def __init__(self, master=None):
 
         super().__init__(master, width=1150, height=600)
@@ -27,8 +21,8 @@ class ventana(tk.Frame):
         self.current_page = 0
         self.current_page_symbols = 0
         self.current_page_types = 0
-        self.lines_per_page = 15
-        self.items_per_page = 15
+        self.items_per_page = 17
+        self.lines_per_page = 17
         self.lines = []
         
         self.filepath = ''
@@ -41,9 +35,18 @@ class ventana(tk.Frame):
         self.lineas_archivo = []  # Inicializar como lista vacía
         #AJUSTAR LAS COLUMNAS
         self.master.bind("<Configure>", self.ajustar_columnas)
-
+        
+        
+        #VARIABLES FASE 2
         self.arch = Archivos.Archivo()
         self.lineas = []
+        
+        self.errores = []
+        self.elementos = []
+        self.simbolo = []
+        
+        self.page = 0
+        self.items_page_fase2 = 12
         
     def create_widgets(self):
         #BARRA DE MENUS
@@ -212,7 +215,7 @@ class ventana(tk.Frame):
         self.pagDer.place(x=209, y=490, width=64, height=64)
         
         #BOTONES PRINCIPALES
-        self.smb2 = tk.Button(self.frame2, text="simbolos", **button_style1)
+        self.smb2 = tk.Button(self.frame2, text="simbolos", **button_style1, command=self.colocar_errores)
         self.smb2.place(x=355, y=20, width=100, height=30)
         
         #ELEMENTO Y ERROR
@@ -224,7 +227,7 @@ class ventana(tk.Frame):
         self.txtErrores.config(font=("Times New Roman",10), bg="#EFDFAC")
         self.txtErrores.place(x=825, y=20, width=300, height=200)
         
-        self.pagIzq2 = tk.Button(self.frame2, image=self.imgPagI)
+        self.pagIzq2 = tk.Button(self.frame2, image=self.imgPagI, command=self.prev_page)
         self.pagIzq2.config(
             activebackground="#7C7731", 
             borderwidth=0, 
@@ -234,7 +237,7 @@ class ventana(tk.Frame):
         )
         self.pagIzq2.place(x=87, y=460, width=64, height=64)
         
-        self.pagDer2 = tk.Button(self.frame2, image=self.imgPagD)
+        self.pagDer2 = tk.Button(self.frame2, image=self.imgPagD, command=self.next_page)
         self.pagDer2.config(
             activebackground="#7C7731", 
             borderwidth=0,
@@ -257,7 +260,7 @@ class ventana(tk.Frame):
         self.tabla.heading("Columna5", text="Direccion")
         
         #PAGINACION IZQUIERDA Y DERECHA DE TIPO Y SIMBOLO
-        self.pagIzqS2 = tk.Button(self.frame2, image=self.imgPagI)
+        self.pagIzqS2 = tk.Button(self.frame2, image=self.imgPagI, command=self.paginar_iFase2)
         self.pagIzqS2.config(
             activebackground="#7C7731", 
             borderwidth=0, 
@@ -267,7 +270,7 @@ class ventana(tk.Frame):
         )
         self.pagIzqS2.place(x=720, y=490, width=64, height=64)
         
-        self.pagDerS2 = tk.Button(self.frame2, image=self.imgPagD)
+        self.pagDerS2 = tk.Button(self.frame2, image=self.imgPagD, command=self.paginar_dFase2)
         self.pagDerS2.config(
             activebackground="#7C7731", 
             borderwidth=0, 
@@ -387,7 +390,73 @@ class ventana(tk.Frame):
         ancho_columna = ancho_total // num_columnas
         for col in self.tabla["columns"]:
             self.tabla.column(col, width=ancho_columna)
+        
+    def colocar_errores(self):
+        # Limpiar el área de texto y la tabla
+        self.txtErrores.config(state="normal")
+        self.txtErrores.delete("1.0", END)
+        for item in self.tabla.get_children():
+            self.tabla.delete(item)
+
+        self.errores, self.simbolos = self.fa2.analisis_final(self.lineas)
+
+        self.mostrar_errores_y_simbolos()
+        self.txtErrores.config(state="disabled")
             
+    def mostrar_errores_y_simbolos(self):
+        """Mostrar errores paginados y todos los símbolos en la tabla."""
+        # --- Mostrando errores (con paginación) ---
+        self.txtErrores.config(state="normal")
+        self.txtErrores.delete("1.0", END)
+        self.txtElemento.config(state="normal")
+        self.txtElemento.delete("1.0", END)
+
+        # Calcular el rango de errores para la página actual
+        start = self.page * self.items_page_fase2
+        end = start + self.items_page_fase2
+        errores_pagina = self.errores[start:end]
+        elementos_pagina = self.lineas[start:end]
+
+        for error in errores_pagina:
+            self.txtErrores.insert(END, f"- {error}\n")
+            
+        self.txtErrores.config(state="disabled")
+        
+        for elemento in elementos_pagina:
+            self.txtElemento.insert(END, f"- {elemento.strip()}\n")
+
+        self.txtElemento.config(state="disabled")
+
+        # --- Mostrando todos los símbolos (sin paginación) ---
+        self.tabla.delete(*self.tabla.get_children())  # Limpiar la tabla
+
+        # Insertar todos los símbolos en la tabla
+        for simbolo in self.simbolos:
+            self.tabla.insert("", "end", values=(
+                simbolo["nombre"],
+                simbolo["tipo"],
+                simbolo["valor"],
+                simbolo["tamaño"],
+                simbolo["direccion"]
+            ))
+
+    # Función para retroceder página
+    def paginar_iFase2(self):
+        """Retroceder una página de errores."""
+        if self.page > 0:
+            self.page -= 1
+            self.mostrar_errores_y_simbolos()
+
+    # Función para avanzar página
+    def paginar_dFase2(self):
+        """Avanzar una página de errores."""
+        # Calcular el total de páginas para errores
+        total_paginas_errores = (len(self.errores) + self.items_page_fase2 - 1) // self.items_page_fase2
+
+        if self.page + 1 < total_paginas_errores:
+            self.page += 1
+            self.mostrar_errores_y_simbolos()
+
     
     
 vent = tk.Tk()

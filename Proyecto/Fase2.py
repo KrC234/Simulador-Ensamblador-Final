@@ -82,7 +82,7 @@ class Validacion:
         elif operando1 in [var['variable'] for var in self.variables] and operando2 in [var['variable'] for var in self.variables]:
             return True
         elif(re.match(r"^\d+$", operando2) or re.match(r"^[0-9A-Fa-f]+h$", operando2)) and (
-                operando1 in self.registros_16 or operando1 in self.registros_8):
+                operando1 in r.registros_16 or operando1 in r.registros_8):
             return True
         return False 
 
@@ -140,7 +140,7 @@ class Validacion:
         elif self.verificar_en_data(linea):
             return 'Correcta'
         elif segmento_activo:
-            return self.validar_instruccion(linea)
+            return self.validar_linea(linea)
         else:
             return 'Declaracion incorrecta o desconocida'
 
