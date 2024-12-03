@@ -10,31 +10,79 @@ class Validacion:
         self.etiquetas = []
         self.f3 = Fase3.Codificacion(self.variables,self.etiquetas)
 
-    # Tratamiento semantico 
+    # Tratamiento semantico
+
 
     def verificar_en_stack(self,linea):
         for exp in r.stack_patterns:
             if re.match(exp,linea.strip()):
                 return True
-        return False 
-    
-    def verificar_en_data(self,linea):
+        return False
+
+    def es_inmediato(self,operando):
+        if re.match(r'^[0-9A-Fa-f]+h$',operando):
+            return True
+        elif re.match(r'^[0-9]+d$', operando):
+            return True
+        elif re.match(r'^\d+$',operando):
+            return True
+        return False
+
+    def codificar_inmediato(self,operando):
+        valor_inm = ''
+        if re.match(r'^[0-9A-Fa-f]+h$', operando):
+            valor_inm = bin(int(operando[:-1], 16))[2:]
+        elif re.match(r'^[0-9]+d$', operando):
+            valor_inm = bin(int(operando[:-1]))[2:]
+        elif re.match(r'^\d+$', operando):
+            valor_inm = bin(int(operando))[2:]
+        return valor_inm
+
+    def verificar_en_data(self, linea):
         for exp in r.data_patterns:
-            match = re.match(exp,linea.strip())
+            match = re.match(exp, linea.strip())
             if match:
+                tipo = ''
+                bits = 0
                 nombre = linea.split()[0]
                 valor = match.group(2)
-                tamaño =  len(valor)
-                self.registrar_simbolo(nombre,tipo='Variable',valor=valor,direccion=self.pc,codificacion='NA',tamaño = tamaño)
-                self.pc = hex(int(self.pc,16) + tamaño)
+                if self.es_inmediato(valor):
+                    codificacion = self.codificar_inmediato(valor)# El valor con 'h' (si lo tiene)
+                    print(f"Valor detectado: {valor},Codificacion : {codificacion}")
+                else:
+                    codificacion = None
+
+                # Determinar el tamaño en función del tipo de variable
+                tamaño = len(valor)  # Tamaño en base a los caracteres (sin modificar el valor)
+                if 'db' in linea:
+                    if codificacion is not None:
+                        if len(codificacion) > 8:
+                            return False
+
+                    tipo = 'Variable de 8 bits'
+                    bits = 8
+                elif 'dw' in linea:
+                    if codificacion is not None:
+                        if len(codificacion) > 16:
+                            return False
+                    tipo = 'Variable de 16 bits'
+                    bits = 16
+
+                # Registrar el símbolo y la variable sin modificar el valor
+                self.registrar_simbolo(nombre, tipo=tipo, valor=valor, direccion=self.pc, codificacion='NA',
+                                       tamaño=tamaño)
+                self.registrar_variable(nombre, valor, bits,self.pc)
+                self.pc = hex(int(self.pc, 16) + tamaño)  # Actualizar la dirección del contador de programa
                 return True
-        return False 
+        return False
     
     #* Registro de variables y etiquetas
-    def registrar_variable(self,variable,valor):
+    def registrar_variable(self,variable,valor,bits,direccion):
         variable = {
             'variable': variable, 
-            'valor': valor 
+            'valor': valor,
+            'bits': bits,
+            'direccion':direccion
         }
         self.variables.append(variable)
 
@@ -99,6 +147,34 @@ class Validacion:
                 valor_inm = bin(int(operando2[:-1]))
             if len(valor_inm) <= 8:
                 return True
+        elif operando1 in [var['variable'] for var in self.variables] and operando2 in [var['variable'] for var in
+                                                                     self.variables]:
+            # Si ambos operandos son variables y tienen el mismo tamaño, son válidos
+            var1 = next(var for var in self.variables if var['variable'] == operando1)
+            var2 = next(var for var in self.variables if var['variable'] == operando2)
+            if var1['bits'] == var2['bits']:
+                return True
+        elif operando1 in r.registros_8:
+            if operando2 in [var['variable'] for var in self.variables]:
+                var2 = next(var for var in self.variables if var['variable'] == operando2)
+                if var2['bits'] == 8:
+                    return True
+        elif operando2 in r.registros_8:
+            if operando1 in [var['variable'] for var in self.variables]:
+                var1 = next(var for var in self.variables if var['variable'] == operando1)
+                if var1['bits'] == 8:
+                    return True
+        elif operando1 in r.registros_16:
+            if operando2 in [var['variable'] for var in self.variables]:
+                var2 = next(var for var in self.variables if var['variable'] == operando2)
+                if var2['bits'] == 16:
+                    return True
+        elif operando2 in r.registros_16:
+            if operando1 in [var['variable'] for var in self.variables]:
+                var1 = next(var for var in self.variables if var['variable'] == operando1)
+                if var1['bits'] == 16:
+                    return True
+
         return False 
 
     def validar_operando(self,operando):
@@ -125,9 +201,13 @@ class Validacion:
         if match_dos:
             instruccion, operandoDestino, operandoFuente = match_dos.groups()
             if not self.validar_instruccion(instruccion, r.instrucciones_2):
+                self.registrar_simbolo(linea, tipo='NA', direccion=self.pc, codificacion='Error: Instruccion no valida',
+                                       tamaño='NA')
                 return f'Error: {instruccion} no es una instruccion de dos operandos'
             
             if not self.validar_operandos(operandoDestino,operandoFuente):
+                self.registrar_simbolo(linea, tipo='NA', direccion=self.pc, codificacion='Error: Operandos no validos',
+                                       tamaño='NA')
                 return f'Error: {operandoDestino} y {operandoFuente} no son compatibles o validos'
 
             self.pc, codificacion_dos = self.f3.codificar_instruccion_2(instruccion,operandoDestino,operandoFuente,self.pc)
@@ -140,8 +220,12 @@ class Validacion:
             instruccion, operando =  match_uno.groups()
 
             if not self.validar_instruccion(instruccion,r.instrucciones_1):
+                self.registrar_simbolo(linea, tipo='NA', direccion=self.pc, codificacion='Error: Instruccion no valida',
+                                       tamaño='NA')
                 return f'Error: {instruccion} no es de un operando'
             if not self.validar_operando(operando):
+                self.registrar_simbolo(linea, tipo='NA', direccion=self.pc, codificacion='Error: Operando no valido',
+                                       tamaño='NA')
                 return f'Error: {operando} no es valido'
             # TODO: Caso especial dado que la instruccion Int no acepta inmediatos mayores a 8 bits
             valor_inm = None
@@ -152,6 +236,9 @@ class Validacion:
                     valor_inm = bin(int(operando[:-1]))
                 if instruccion.lower() == 'int':
                     if len(valor_inm) > 8:
+                        self.registrar_simbolo(linea, tipo='NA', direccion=self.pc,
+                                               codificacion='Error: Valor no soportado',
+                                               tamaño='NA')
                         return f'Error: el operando {operando} excede los 8 bits permitidos para la instrucción INT'
                     else:
                         self.pc, codificacion_1 = self.f3.codificar_instruccion_1(instruccion, operando, self.pc)
@@ -168,7 +255,9 @@ class Validacion:
                 self.pc, codificacion_0 = self.f3.codificar_instruccion_0(instruccion, self.pc)
                 self.lista_de_simbolos.append(codificacion_0)
                 return 'Correcta'
-            else: 
+            else:
+                self.registrar_simbolo(linea,tipo = 'NA', direccion = self.pc, codificacion = 'Error: Instruccion no valida',
+                                       tamaño = 'NA')
                 return f'Error: {instruccion} no es una instruccion valida'
         return 'Error de declaracion'
 
@@ -198,7 +287,7 @@ class Validacion:
             elif linea == 'ends':
                 resultados.append('Fin de segmento')
                 segmento_activo = False 
-            else: 
+            else:
                 resultados.append(self.analizar_linea(linea,segmento_activo))
         return resultados
     def analisis_final(self,lineas):

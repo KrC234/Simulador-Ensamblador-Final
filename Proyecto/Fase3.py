@@ -48,6 +48,7 @@ class Codificacion:
         w = None 
         mod =  None
         r_m = None
+        bits_desplazamiento = None
         if self.es_registro(operando) and operando in r.registros_8:
             tipo = 'reg/mem'
             mod = '11'
@@ -60,11 +61,16 @@ class Codificacion:
             r_m = r.registros_binarios[operando]
         elif self.es_variable(operando):
             tipo =  'reg/mem'
-            w = ''
+            bits_variable = self.obtener_tamano_variable(operando)
+            mod = '00'
+            r_m = '110'
+            bits_desplazamiento =self.calcular_desplazamiento(operando)
+            w = '0' if bits_variable == 8 else '1'
         elif self.es_etiqueta(operando):
             tipo = 'etiqueta'
         elif self.es_inmediato(operando):
             tipo = 'inmediato'
+
         else:
             tipo = 'Operando no valido'
         
@@ -80,10 +86,9 @@ class Codificacion:
             direccion = self.codificar_inmediato(operando).zfill(8)
         else:
             direccion = ''
+        if bits_desplazamiento is not None:
+            direccion = f'{direccion}{bits_desplazamiento}'
         opcode = self.reemplazar_valores(opcode,w=w)
-        print(f'{instruccion} {operando}')
-        print(opcode)
-        print(direccion)
         binario = f'{opcode}{direccion}'
         codificacion = hex(int(binario,2))
         return codificacion
@@ -98,8 +103,9 @@ class Codificacion:
             return False 
         
     def es_variable(self,operando):
-        if operando in [variable['variable'] for variable in self.variables]:
-            return True
+        for variable in self.variables:
+            if variable['variable'] == operando:
+                return variable
         return False 
     
     def es_etiqueta(self,operando):
@@ -113,6 +119,7 @@ class Codificacion:
         elif re.match(r'^[0-9]+d$', operando):
             return True
         return False
+
     def codificar_inmediato(self,operando):
         valor_inm = ''
         if re.match(r'^[0-9A-Fa-f]+h$', operando):
@@ -123,7 +130,25 @@ class Codificacion:
 
     def es_memoria(self,operando):
         pass
+    def obtener_direccion(self,variable):
+        var_data = self.es_variable(variable)
+        if var_data:
+            return var_data['direccion']
+        return None
 
+    def obtener_tamano_variable(self, variable):
+        var_data = self.es_variable(variable)
+        if var_data:
+            return var_data['bits']  # Retorna 8 o 16
+        return None
+
+    def calcular_desplazamiento(self,variable):
+        desplazamiento = self.obtener_direccion(variable)
+        if desplazamiento:
+            bits_desplazamiento = bin(int(desplazamiento,16))[2:].zfill(16)
+            return bits_desplazamiento
+        else:
+            return None
 
     def codificar_dos_operandos(self,instruccion,operandoDestino,operandoFuente):
         if instruccion not in r.instrucciones_2:
@@ -136,45 +161,70 @@ class Codificacion:
         mod = None
         if self.es_registro(operandoDestino) and self.es_registro(operandoFuente):
             tipo = 'Reg,Reg/Mem'
+            d = '0'
         elif self.es_registro(operandoDestino) and self.es_variable(operandoFuente):
             tipo = 'Reg,Reg/Mem'
+            d = '1'
         elif self.es_variable(operandoDestino) and self.es_registro(operandoFuente):
-            tipo = 'Reg/Mem'
+            tipo = 'Reg/Mem,Reg'
+            d = '0'
+        elif self.es_registro(operandoDestino) and self.es_inmediato(operandoFuente):
+            tipo = 'Reg,Inm'
         else:
             return 'Tipo desconocido'
 
         if tipo not in tipos:
             return 'Tipo desconocido'
-        tipo_seleccionado =  tipos[tipo]
-        w = None
-        if operandoDestino in r.registros_8 or operandoFuente in r.registros_8:
-            w = '0'
-        elif operandoDestino in r.registros_16 or operandoFuente in r.registros_16:
-            w = '1'
 
+        if tipo == 'Reg,Inm' not in tipos:
+            tipo = 'Reg/Mem,Inm'
+        tipo_seleccionado =  tipos[tipo]
+
+        w = None
         reg = None
         r_m = None
-        if tipo == 'Reg/Mem,Reg':
+        bits_desplazamiento = None
+        direccion = tipo_seleccionado['direccion']
+        if tipo == 'Reg/Mem,Reg' and self.es_variable(operandoDestino):
             d = '0'
-            reg = r.registros_binarios[operandoFuente]
-            mod = '11'
-            r_m =  r.registros_binarios[operandoDestino]
-
+            mod = '00'
+            r_m = '110'
+            bits_desplazamiento = self.calcular_desplazamiento(operandoDestino)
+            bits_variable = self.obtener_tamano_variable(operandoDestino)
         elif tipo == 'Reg,Reg/Mem' and self.es_registro(operandoFuente):
             d = '1'
             reg = r.registros_binarios[operandoDestino]
             mod = '11'
+            if operandoDestino in r.registros_8 or operandoFuente in r.registros_8:
+                w = '0'
+            elif operandoDestino in r.registros_16 or operandoFuente in r.registros_16:
+                w = '1'
             r_m = r.registros_binarios[operandoFuente]
         elif tipo == 'Reg,Reg/Mem' and self.es_variable(operandoFuente):
-            d = ''
+            d = '1'
             reg = r.registros_binarios[operandoDestino]
+            mod = '00'
+            r_m = '110'
+            bits_desplazamiento = self.calcular_desplazamiento(operandoDestino)
+            bits_variable = self.obtener_tamano_variable(operandoDestino)
+            w = '0' if bits_variable == 8 else '1'
+        elif tipo == 'Reg,Inm' and self.es_registro(operandoDestino):
             mod = '11'
-            r_m = ''
+            reg = r.registros_binarios[operandoDestino]
+            if operandoDestino in r.registros_8:
+                w = '0'
+                relleno = 8
+            if operandoDestino in r.registros_16:
+                w = '1'
+                relleno = 16
+            direccion = self.codificar_inmediato(operandoFuente).zfill(relleno)
 
-        opcode = tipo_seleccionado['opcode'].replace('w',w)
-        direccion = tipo_seleccionado['direccion']
+        opcode = tipo_seleccionado['opcode']
+        opcode = self.reemplazar_valores(opcode,w = w,d=d, mod = mod, reg = reg, r_m = r_m)
+
         direccion = self.reemplazar_valores(direccion,mod = mod, reg = reg, r_m = r_m)
-
+        if bits_desplazamiento is not None:
+            direccion = f'{direccion}{bits_desplazamiento}'
         binario = f'{opcode}{direccion}'
 
         codificacion = hex(int(binario,2))
@@ -194,10 +244,10 @@ class Codificacion:
         codificacion = self.codificar_un_operando(instruccion,operando)
         nombre = f'{instruccion} {operando}'
         if codificacion == 'Tipo desconocido':
-            simbolo = self.registrar_simbolo(tipo='Instruccion',simbolo = nombre, valor = 'NA',direccion =pc,
+            simbolo = self.registrar_simbolo(tipo='Instruccion',simbolo = nombre, valor = 'Error: Operando desconocido',direccion =pc,
                                              codificacion=codificacion,tamaño='NA')
         elif codificacion == 'Operando no valido':
-            simbolo = self.registrar_simbolo(tipo='Instruccion', simbolo=nombre, valor='NA', direccion=pc,
+            simbolo = self.registrar_simbolo(tipo='Instruccion', simbolo=nombre, valor='Error: Operando no valido', direccion=pc,
                                              codificacion=codificacion, tamaño='NA')
         else:
             simbolo = self.registrar_simbolo(tipo='Instruccion',simbolo = nombre, valor = 'NA',direccion =pc,
@@ -209,7 +259,8 @@ class Codificacion:
         codificacion = self.codificar_dos_operandos(instruccion,operandoDestino,operandoFuente)
         nombre = f'{instruccion} {operandoDestino},{operandoFuente}'
         if codificacion == 'Tipo desconocido':
-            simbolo = self.registrar_simbolo(tipo='Instruccion',simbolo = nombre, valor = 'NA',direccion =pc,codificacion=codificacion,tamaño='NA')
+            simbolo = self.registrar_simbolo(tipo='Instruccion',simbolo = nombre, valor = 'Error: Operandos no reconocidos',
+                                             direccion =pc,codificacion=codificacion,tamaño='NA')
         else:
             simbolo = self.registrar_simbolo(tipo='Instruccion',simbolo = nombre, valor = 'NA',direccion =pc,codificacion=codificacion,tamaño='NA')
             pc = hex(int(pc,16) + int(codificacion,16))

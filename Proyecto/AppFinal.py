@@ -265,6 +265,13 @@ class ventana(tk.Frame):
         self.tabla.heading("Columna4",text="Codificacion")
         self.tabla.heading("Columna5", text="Tamaño(Bytes)")
         self.tabla.heading("Columna6", text="Direccion")
+
+        # Crear scrollbar vertical para la tabla
+        scrollbar_tabla = tk.Scrollbar(self.frame2, orient="vertical", command=self.tabla.yview)
+        scrollbar_tabla.place(x=1125, y=230, height=230)  # Ajusta las coordenadas y dimensiones según tu diseño
+
+        # Vincular el scrollbar al Treeview
+        self.tabla.configure(yscrollcommand=scrollbar_tabla.set)
         
         #PAGINACION IZQUIERDA Y DERECHA DE TIPO Y SIMBOLO
         self.pagIzqS2 = tk.Button(self.frame2, image=self.imgPagI, command=self.paginar_iFase2)

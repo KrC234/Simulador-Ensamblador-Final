@@ -1,9 +1,9 @@
 '''
-Diccionario de datos:
-Definicion de registros 
-Definicion de instrucciones 
-Palabras reservadas
-codificacion de instrucciones: registros, direcciones, codigo 
+    Diccionario de datos:
+    Definicion de registros
+    Definicion de instrucciones
+    Palabras reservadas
+    codificacion de instrucciones: registros, direcciones, codigo
 '''
 # Pseudoinstrucciones 
 pseudoinstrucciones = {"dw","db","equ","end","ends","endp",".code",".stack",".data"}
@@ -27,14 +27,27 @@ instrucciones_2 = {"rcl","shl","xchg", "mov"}
 stack_patterns = [r"^\s*dw\s+([0-9A-Fa-f]+h|\d+)\s+dup\(([-+]?\d+|‘[^’]*’)\)\s*$"]
 #! Verificar operandos entre comillas 
 data_patterns = [
-    r"(\w+)\s+db\s+['\"]([^'\"]+)['\"]",  # Captura nombre y valor entre comillas
-    r"(\w+)\s+db\s+([-+]?\d+|[0-9A-Fa-f]+h)",  # Captura nombre y valor numérico
-    r"(\w+)\s+db\s+([0-9A-Fa-f]+h|\d+)\s+dup\((['\"][^'\"]+['\"]|[0-9A-Fa-f]+h|\d+)\)",  # Con DUP
-    r"(\w+)\s+dw\s+([-+]?\d+|[0-9A-Fa-f]+h)",  # Captura nombre y valor numérico para DW
-    r"(\w+)\s+dw\s+([0-9A-Fa-f]+h|\d+)\s+dup\((['\"][^'\"]+['\"]|[0-9A-Fa-f]+h|\d+)\)",  # DW con DUP
-    r"(\w+)\s+equ\s+([-+]?\d+|[0-9A-Fa-f]+h)"
+    # db: captura valores entre comillas (simples y dobles)
+    r"(\w+)\s+db\s+['\"\u201C\u201D]([^'\u201C\u201D\"']+)['\"\u201C\u201D]",  # DB con valores entre comillas
+
+    # db: captura valores numéricos hexadecimales o decimales con 'h'
+    r"(\w+)\s+db\s+([-+]?\d+h?|[0-9A-Fa-f]+h$)",  # DB con valores hexadecimales o decimales
+
+    # db: captura valores con dup, puede ser cadena entre comillas, número o valor hexadecimal
+    r"(\w+)\s+db\s+([0-9A-Fa-f]+h|\d+)\s+dup\((['\"][^'\"]+['\"]|[0-9A-Fa-f]+h|\d+)\)",  # DB con duplicación
+
+    # dw: acepta valores numéricos o cadenas entre comillas
+    r"(\w+)\s+dw\s+(['\"\u201C\u201D]([^'\u201C\u201D\"']+)['\"\u201C\u201D]|[-+]?\d+h?|[0-9A-Fa-f]+h$)",
+    # DW con valores numéricos o cadenas entre comillas
+
+    # dw con duplicación, permitiendo cadenas entre comillas o valores numéricos
+    r"(\w+)\s+dw\s+([0-9A-Fa-f]+h|\d+)\s+dup\((['\"][^'\"]+['\"]|[0-9A-Fa-f]+h|\d+)\)",  # DW con duplicación
+
+    # equ: captura valores hexadecimales o decimales
+    r"(\w+)\s+equ\s+([-+]?\d+h?|[0-9A-Fa-f]+h)"  # Equ con valores hexadecimales o decimales
 ]
-# Valores binarios de los registros para operandos reg o r/m 
+
+# Valores binarios de los registros para operandos reg o r/m
 
 registros_binarios = {
     'ax': '000', 'al': '000',
@@ -125,10 +138,14 @@ decodificaciones_2 = {
         'Reg/Mem,Inm':{
             'opcode':'1100011w',
             'direccion':'mod000r/m'
+        },
+        'Reg,Inm':{
+            'opcode':'1011wreg',
+            'direccion':None
         }
     },
     'rcl':{
-        'Reg/Mem,Inm.byte':{
+        'Reg/Mem,Inm':{
             'opcode': '1100000w',
             'direccion':'modTTTr/m'
         }
