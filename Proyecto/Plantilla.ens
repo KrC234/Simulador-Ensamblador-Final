@@ -1,0 +1,27 @@
+.stack segment
+dw 0120h dup(0)
+db 34h dup(‘a’)
+ends
+.data segment
+	var1 dw 012 
+	var2 db 014213h
+	var3 db 14h
+	contador dw 34
+	palabra dw “holaa 
+	car1 dw “@ $”
+ends
+.code segment
+int 24d
+not al
+mov al,var3
+MOV AX, var3
+MOV AL, 24d
+MOV BL, 09d
+MOV BL, [AL]
+not var3
+MUL BL
+comparacion:
+MOV AL,0153h
+NOT AL
+RET
+
