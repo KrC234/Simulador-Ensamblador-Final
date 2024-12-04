@@ -66,10 +66,11 @@ class Codificacion:
             r_m = '110'
             bits_desplazamiento =self.calcular_desplazamiento(operando)
             w = '0' if bits_variable == 8 else '1'
-        elif self.es_etiqueta(operando):
-            tipo = 'etiqueta'
         elif self.es_inmediato(operando):
             tipo = 'inmediato'
+        elif self.es_etiqueta(operando):
+            tipo = 'etiqueta'
+
 
         else:
             tipo = 'Operando no valido'
@@ -226,54 +227,33 @@ class Codificacion:
         if bits_desplazamiento is not None:
             direccion = f'{direccion}{bits_desplazamiento}'
         binario = f'{opcode}{direccion}'
-
-        codificacion = hex(int(binario,2))
+        print(binario)
+        if isinstance(binario, str):
+            codificacion = hex(int(binario, 2))
+        else:
+            print("Error: 'binario' no es una cadena.")
+            return '00000'
 
         return codificacion
     
-    # Manejo para la tabla de simbolos
+    # Manejo para la tabla de simbolo
     # Instrucciones sin operandos 
     def codificar_instruccion_0(self,instruccion, pc):
         codificacion  = self.codificar_sin_operandos(instruccion)
-        simbolo = self.registrar_simbolo(tipo='Instruccion',simbolo = 'NA', valor = 'NA',direccion =pc,codificacion=codificacion,tamaño='NA')
         pc = int(pc,16) + int(codificacion,16)
-        return pc, simbolo
+        return pc, codificacion
 
     # Instrucciones de un operando
     def codificar_instruccion_1(self,instruccion,operando,pc):
         codificacion = self.codificar_un_operando(instruccion,operando)
         nombre = f'{instruccion} {operando}'
-        if codificacion == 'Tipo desconocido':
-            simbolo = self.registrar_simbolo(tipo='Instruccion',simbolo = nombre, valor = 'Error: Operando desconocido',direccion =pc,
-                                             codificacion=codificacion,tamaño='NA')
-        elif codificacion == 'Operando no valido':
-            simbolo = self.registrar_simbolo(tipo='Instruccion', simbolo=nombre, valor='Error: Operando no valido', direccion=pc,
-                                             codificacion=codificacion, tamaño='NA')
-        else:
-            simbolo = self.registrar_simbolo(tipo='Instruccion',simbolo = nombre, valor = 'NA',direccion =pc,
-                                             codificacion=codificacion,tamaño='NA')
+        if codificacion != 'Tipo desconocido' or codificacion != 'Operando no valido':
             pc = hex(int(pc,16) + int(codificacion,16))
-        return pc, simbolo
+        return pc, codificacion
 
     def codificar_instruccion_2(self,instruccion,operandoDestino,operandoFuente,pc):
         codificacion = self.codificar_dos_operandos(instruccion,operandoDestino,operandoFuente)
         nombre = f'{instruccion} {operandoDestino},{operandoFuente}'
-        if codificacion == 'Tipo desconocido':
-            simbolo = self.registrar_simbolo(tipo='Instruccion',simbolo = nombre, valor = 'Error: Operandos no reconocidos',
-                                             direccion =pc,codificacion=codificacion,tamaño='NA')
-        else:
-            simbolo = self.registrar_simbolo(tipo='Instruccion',simbolo = nombre, valor = 'NA',direccion =pc,codificacion=codificacion,tamaño='NA')
-            pc = hex(int(pc,16) + int(codificacion,16))
-        return pc, simbolo
-
-
-    def registrar_simbolo(self,tipo, simbolo=None,valor=None,direccion=None,codificacion=None,tamaño=None):
-        simbolo = {
-            'nombre' : simbolo, 
-            'tipo' : tipo,
-            'valor': valor,
-            'codificacion': codificacion,
-            'tamaño': tamaño,
-            'direccion':direccion
-        }
-        return simbolo
+        if codificacion != 'Tipo desconocido':
+            pc = hex(int(str(pc), 16) + int(str(codificacion), 16))
+        return pc, codificacion

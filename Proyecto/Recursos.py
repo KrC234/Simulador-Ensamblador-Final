@@ -25,27 +25,33 @@ instrucciones_2 = {"rcl","shl","xchg", "mov"}
 
 # Patrones para el análisis semantico 
 stack_patterns = [r"^\s*dw\s+([0-9A-Fa-f]+h|\d+)\s+dup\(([-+]?\d+|‘[^’]*’)\)\s*$"]
-#! Verificar operandos entre comillas 
+#! Verificar operandos entre comillas
 data_patterns = [
     # db: captura valores entre comillas (simples y dobles)
     r"(\w+)\s+db\s+['\"\u201C\u201D]([^'\u201C\u201D\"']+)['\"\u201C\u201D]",  # DB con valores entre comillas
 
-    # db: captura valores numéricos hexadecimales o decimales con 'h'
-    r"(\w+)\s+db\s+([-+]?\d+h?|[0-9A-Fa-f]+h$)",  # DB con valores hexadecimales o decimales
+    # db: captura valores numéricos binarios primero, luego hexadecimales y finalmente decimales
+    r"(\w+)\s+db\s+([01]+b|[0-9A-Fa-f]+h|[-+]?\d+)",  # DB con valores binarios, hexadecimales o decimales
 
-    # db: captura valores con dup, puede ser cadena entre comillas, número o valor hexadecimal
-    r"(\w+)\s+db\s+([0-9A-Fa-f]+h|\d+)\s+dup\((['\"][^'\"]+['\"]|[0-9A-Fa-f]+h|\d+)\)",  # DB con duplicación
+    # db: captura valores con dup, priorizando binarios, luego hexadecimales y cadenas entre comillas
+    r"(\w+)\s+db\s+([01]+b|[0-9A-Fa-f]+h|\d+)\s+dup\((['\"][^'\"]+['\"]|[01]+b|[0-9A-Fa-f]+h|\d+)\)",
+    # DB con duplicación
 
-    # dw: acepta valores numéricos o cadenas entre comillas
-    r"(\w+)\s+dw\s+(['\"\u201C\u201D]([^'\u201C\u201D\"']+)['\"\u201C\u201D]|[-+]?\d+h?|[0-9A-Fa-f]+h$)",
+    # dw: acepta valores numéricos binarios primero, luego hexadecimales, decimales o cadenas entre comillas
+    r"(\w+)\s+dw\s+(['\"\u201C\u201D]([^'\u201C\u201D\"']+)['\"\u201C\u201D]|[01]+b|[0-9A-Fa-f]+h|[-+]?\d+)",
     # DW con valores numéricos o cadenas entre comillas
 
-    # dw con duplicación, permitiendo cadenas entre comillas o valores numéricos
-    r"(\w+)\s+dw\s+([0-9A-Fa-f]+h|\d+)\s+dup\((['\"][^'\"]+['\"]|[0-9A-Fa-f]+h|\d+)\)",  # DW con duplicación
+    # dw con duplicación, priorizando binarios, luego hexadecimales y cadenas entre comillas
+    r"(\w+)\s+dw\s+([01]+b|[0-9A-Fa-f]+h|\d+)\s+dup\((['\"][^'\"]+['\"]|[01]+b|[0-9A-Fa-f]+h|\d+)\)",
+    # DW con duplicación
 
-    # equ: captura valores hexadecimales o decimales
-    r"(\w+)\s+equ\s+([-+]?\d+h?|[0-9A-Fa-f]+h)"  # Equ con valores hexadecimales o decimales
+    # equ: captura valores binarios primero, luego hexadecimales y decimales
+    r"(\w+)\s+equ\s+([01]+b|[0-9A-Fa-f]+h|[-+]?\d+)"  # EQU con valores binarios, hexadecimales o decimales
+    # EQU con valores binarios, hexadecimales o decimales
 ]
+
+
+
 
 # Valores binarios de los registros para operandos reg o r/m
 
