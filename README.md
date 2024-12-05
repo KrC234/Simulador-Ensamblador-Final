@@ -2,9 +2,9 @@
 ## Equipo: 6
 
 __Autores:__ 
-+ Aalan Kalid Ruíz Colín 
-+ Daniel García Urbina
-+ Juan Luis Gamboa 
++ Kalid
++ Daiel
++ Juan Luis
 
 El proyecto conjunta las 3 fases de simular un ensamblador, dónde se cuentan con las siguientes 3 fases:
 + Separación de instrucciones: Separa las instrucciones por tipo, y designa el tipo de simbolos.
