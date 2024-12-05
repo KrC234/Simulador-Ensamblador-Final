@@ -2,7 +2,11 @@ import re
 import Recursos as r
 import Fase3
 class Validacion:
+    '''
+    Fase 2: Tratamiento semantico
+    '''
 
+    # Definición de recursos Globales de la Fase 2
     def __init__(self):
         self.pc = '0x250'
         self.lista_de_simbolos = []
@@ -11,9 +15,7 @@ class Validacion:
         self.f3 = Fase3.Codificacion(self.variables,self.etiquetas)
         self.lineas_contador = []
 
-    # Tratamiento semantico
-
-
+    # Analisis en .stack segment
     def verificar_en_stack(self,linea):
         for exp in r.stack_patterns:
             if re.match(exp,linea.strip()):
@@ -21,6 +23,7 @@ class Validacion:
                 return True
         return False
 
+    # Validaciones individuales
     def es_inmediato(self,operando):
         if re.match(r'^[0-9A-Fa-f]+h$',operando):
             return True
@@ -40,22 +43,28 @@ class Validacion:
             valor_inm = bin(int(operando))[2:]
         return valor_inm
 
+    def es_String(self, valor):
+        patron = r"""^(?:'[^']*'|"[^"]*"|“[^”]*”|”[^”]*”)$"""
+        if isinstance(valor, str) and re.match(patron, valor):
+            return True
+        return False
+
     def verificar_tamaño(self,etiqueta):
         if len(etiqueta) < 10:
             return True
         return False
 
-    def es_String(self, valor):
-        # Expresión regular para detectar cadenas entre:
-        # - Comillas simples: 'ejemplo'
-        # - Comillas dobles: "ejemplo"
-        # - Comillas dobles curvadas: “ejemplo” o ”ejemplo”
-        patron = r"""^(?:'[^']*'|"[^"]*"|“[^”]*”|”[^”]*”)$"""
-
-        # Validar el valor contra el patrón
-        if isinstance(valor, str) and re.match(patron, valor):
+    def es_binario(self, valor):
+        # Solo acepta 0 y 1 antes de la "b" final
+        if re.match(r'^[01]+b$', valor, re.IGNORECASE):
             return True
         return False
+
+    def es_variable_registrada(self, nombre):
+        return any(var['variable'] == nombre for var in self.variables)
+
+    #! Considerar: La sección al trabajar con valores booleanos no especifica mucho en el tipo de error, considerando el mensaje global
+    # 'Declaración incorrecta o desconicda'
 
     def verificar_en_data(self, linea):
         for exp in r.data_patterns:
@@ -72,18 +81,18 @@ class Validacion:
                     print(f"Error: La variable '{nombre}' ya está registrada.")
                     return False
 
-                if 'b' in valor and not self.es_binario(valor):
-                    return False
-
+                #! Considerar lo mencionado en el diccionario de datos.
+                #if 'b' in valor and not self.es_binario(valor):
+                 #   return False
                 if self.es_inmediato(valor):
-                    codificacion = self.codificar_inmediato(valor)# El valor con 'h' (si lo tiene)
+                    codificacion = self.codificar_inmediato(valor)
                     print(f"Valor detectado: {valor},Codificacion : {codificacion}")
                 else:
                     codificacion = None
 
                 tamaño =  None
                 # Determinar el tamaño en función del tipo de variable
-                if 'db' in linea:
+                if 'db' in linea: # Para variables de 8 bits
                     if codificacion is not None:
                         if len(codificacion) > 8:
                             return False
@@ -93,7 +102,7 @@ class Validacion:
                         tamaño = 1
                     tipo = 'Variable de 8 bits'
                     bits = 8
-                elif 'dw' in linea:
+                elif 'dw' in linea: # Para palabras de 16 bits
                     if codificacion is not None:
                         if len(codificacion) > 16:
                             return False
@@ -112,16 +121,6 @@ class Validacion:
                 return True
         return False
 
-    def es_binario(self, valor):
-        # Solo acepta 0 y 1 antes de la "b" final
-        if re.match(r'^[01]+b$', valor, re.IGNORECASE):  # Ignora mayúsculas/minúsculas en 'b'
-            return True
-        return False
-
-    def es_variable_registrada(self, nombre):
-        # Implementar la lógica para verificar si el nombre ya existe en el registro de variables
-        return any(var['variable'] == nombre for var in self.variables)
-    
     #* Registro de variables y etiquetas
     def registrar_variable(self,variable,valor,bits,direccion):
         variable = {
@@ -171,6 +170,7 @@ class Validacion:
             return True
         return False
 
+    #! Considerar: Ha sido limitado unicamente a valores decimales y hexadecimales con h y d, puede extenderse a valores binarios y decimales
     def es_inmediato(self,operando):
         if re.match(r'^[0-9A-Fa-f]+h$',operando):
             return True
@@ -178,8 +178,8 @@ class Validacion:
             return True
         return False
 
+    # Verificación de tamaño para instrucciones de dos operandos, las instrucciones no pueden manejar operaciones con operandos de diferentes tamaños
     def validar_operandos(self,operando1,operando2):
-
         if operando1 in r.registros_8 and operando2 in r.registros_8:
             return True
         elif operando1 in r.registros_16 and operando2 in r.registros_16:
@@ -231,9 +231,9 @@ class Validacion:
                 var1 = next(var for var in self.variables if var['variable'] == operando1)
                 if var1['bits'] == 16:
                     return True
-
         return False 
 
+    # Validación para instrucciones de un operando
     def validar_operando(self,operando):
         if self.validar_registro(operando):
             return True
@@ -245,6 +245,7 @@ class Validacion:
             return True
         return False 
 
+    # Verificación linea individual de las lineas del .code segment
     def validar_linea(self,linea):
         if ":" in linea:
             etiqueta = linea.split(':')[0].strip()
@@ -303,6 +304,7 @@ class Validacion:
                 return f'Error: {instruccion} no es una instruccion valida'
         return 'Error de declaracion'
 
+    # Analisís global de las lineas de instruccion
     def analizar_linea(self,linea,segmento_activo):
         if not segmento_activo:
             return 'Error: Linea fuera de segmento'
@@ -315,6 +317,7 @@ class Validacion:
         else:
             return 'Declaracion incorrecta o desconocida'
 
+    # Análisis del código Fuente
     def analizar_lineas(self,lineas):
         resultados = []
 
@@ -336,7 +339,7 @@ class Validacion:
     def retornar_lineas(self):
         return self.lineas_contador
 
-
+    # Resultados finales del análisis
     def analisis_final(self,lineas):
         resultados = self.analizar_lineas(lineas)
         return resultados, self.lista_de_simbolos
