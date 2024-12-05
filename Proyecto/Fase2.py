@@ -78,7 +78,6 @@ class Validacion:
                     return False
 
                 if self.es_variable_registrada(nombre):
-                    print(f"Error: La variable '{nombre}' ya está registrada.")
                     return False
 
                 #! Considerar lo mencionado en el diccionario de datos.
@@ -86,7 +85,6 @@ class Validacion:
                  #   return False
                 if self.es_inmediato(valor):
                     codificacion = self.codificar_inmediato(valor)
-                    print(f"Valor detectado: {valor},Codificacion : {codificacion}")
                 else:
                     codificacion = None
 
