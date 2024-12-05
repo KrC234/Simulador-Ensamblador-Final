@@ -133,7 +133,11 @@ class Validacion:
         self.variables.append(variable)
 
     def registrar_etiqueta(self,etiqueta):
-        self.etiquetas.append(etiqueta)
+        etiq = {
+            'etiqueta': etiqueta,
+            'direccion': self.pc
+        }
+        self.etiquetas.append(etiq)
 
     def registrar_simbolo(self, simbolo, tipo, valor =  None,direccion = None, tamaño = None):
         simbolo = {
@@ -237,7 +241,7 @@ class Validacion:
             return True
         elif self.es_inmediato(operando):
             return True
-        elif operando in [etiqueta for etiqueta in self.etiquetas]:
+        elif operando in [etiqueta['etiqueta'] for etiqueta in self.etiquetas]:
             return True
         return False 
 
@@ -282,7 +286,7 @@ class Validacion:
                     valor_inm = bin(int(operando[:-1]))
                 if instruccion.lower() == 'int':
                     if len(valor_inm) > 8:
-                        return f'Error: el operando {operando} excede los 8 bits permitidos para la instrucción INT'
+                        return f'Error: el operando {operando} no es compatible con la instruccion'
                     else:
                         self.pc, codificacion_1 = self.f3.codificar_instruccion_1(instruccion, operando, self.pc)
                         return codificacion_1

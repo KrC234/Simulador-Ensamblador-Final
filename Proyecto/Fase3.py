@@ -70,8 +70,6 @@ class Codificacion:
             tipo = 'inmediato'
         elif self.es_etiqueta(operando):
             tipo = 'etiqueta'
-
-
         else:
             tipo = 'Operando no valido'
         
@@ -85,6 +83,8 @@ class Codificacion:
             direccion = self.reemplazar_valores(direccion, mod=mod,r_m=r_m)
         elif direccion is None and tipo == 'inmediato':
             direccion = self.codificar_inmediato(operando).zfill(8)
+        elif direccion is None and tipo == 'etiqueta':
+            direccion = bin(int(self.direccion_etiqueta(operando),16))[2:]
         else:
             direccion = ''
         if bits_desplazamiento is not None:
@@ -110,14 +110,19 @@ class Codificacion:
         return False 
     
     def es_etiqueta(self,operando):
-        if operando in self.etiquetas:
-            return True
+        for etiqueta in self.etiquetas:
+            if etiqueta['etiqueta'] == operando:
+                return etiqueta
         return False
 
     def es_inmediato(self,operando):
         if re.match(r'^[0-9A-Fa-f]+h$',operando):
             return True
         elif re.match(r'^[0-9]+d$', operando):
+            return True
+        elif re.match(r'^[0-1]+b$',operando):
+            return True
+        elif re.match(r'\d+$',operando):
             return True
         return False
 
@@ -129,8 +134,12 @@ class Codificacion:
             valor_inm = bin(int(operando[:-1]))[2:]
         return valor_inm
 
-    def es_memoria(self,operando):
-        pass
+    def direccion_etiqueta(self,etiqueta):
+        etiqueta_data = self.es_etiqueta(etiqueta)
+        if etiqueta_data:
+            return etiqueta_data['direccion']
+        return None
+
     def obtener_direccion(self,variable):
         var_data = self.es_variable(variable)
         if var_data:
@@ -235,12 +244,18 @@ class Codificacion:
             return '00000'
 
         return codificacion
+
+    def cacular_bytes(self,codificacion):
+        binario = bin(int(codificacion,16))[2:]
+        bytes = len(binario) // 8
+        return bytes
     
     # Manejo para la tabla de simbolo
     # Instrucciones sin operandos 
     def codificar_instruccion_0(self,instruccion, pc):
         codificacion  = self.codificar_sin_operandos(instruccion)
-        pc = int(pc,16) + int(codificacion,16)
+        bytes = self.cacular_bytes(codificacion)
+        pc = hex(int(pc, 16) + int(bytes))
         return pc, codificacion
 
     # Instrucciones de un operando
@@ -248,12 +263,14 @@ class Codificacion:
         codificacion = self.codificar_un_operando(instruccion,operando)
         nombre = f'{instruccion} {operando}'
         if codificacion != 'Tipo desconocido' or codificacion != 'Operando no valido':
-            pc = hex(int(pc,16) + int(codificacion,16))
+            bytes = self.cacular_bytes(codificacion)
+            pc = hex(int(pc,16) + int(bytes))
         return pc, codificacion
 
     def codificar_instruccion_2(self,instruccion,operandoDestino,operandoFuente,pc):
         codificacion = self.codificar_dos_operandos(instruccion,operandoDestino,operandoFuente)
         nombre = f'{instruccion} {operandoDestino},{operandoFuente}'
         if codificacion != 'Tipo desconocido':
-            pc = hex(int(str(pc), 16) + int(str(codificacion), 16))
+            bytes = self.cacular_bytes(codificacion)
+            pc = hex(int(pc, 16) + int(bytes))
         return pc, codificacion
